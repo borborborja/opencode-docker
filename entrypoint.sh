@@ -8,18 +8,21 @@ echo "Running entrypoint script..."
 echo "Current PATH: $PATH"
 echo "Current User: $(whoami)"
 
-echo "Checking for OpenCode updates or initial installation..."
-# The official install script detects if it's already installed and its version.
-# Note: we ignore the exit code as we already have a pre-installed binary in /usr/local/bin
-curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path || echo "Warning: Update check failed. Using existing binary."
-
-# If the installer put a new version in the default path, move it to our safe location
-if [ -f "/root/.opencode/bin/opencode" ]; then
-    echo "Found new/updated binary in default path. Moving to /usr/local/bin..."
-    mv /root/.opencode/bin/opencode /usr/local/bin/opencode
+echo "Checking for OpenCode updates..."
+# We run the installer but don't let it fail the script.
+# The installer might fail due to network issues or GitHub rate limits.
+if curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
+    # If the installer put a new version in the default path, move it to our safe location
+    if [ -f "/root/.opencode/bin/opencode" ]; then
+        echo "Found new/updated binary. Updating /usr/local/bin/opencode..."
+        mv /root/.opencode/bin/opencode /usr/local/bin/opencode
+        chmod +x /usr/local/bin/opencode
+    fi
+else
+    echo "Warning: Update check failed (network issue or rate limit). Continuing with existing version..."
 fi
 
-# Final check for the binary in our safe location
+# Final check for the binary
 OPENCODE_BIN="/usr/local/bin/opencode"
 
 if [ ! -x "$OPENCODE_BIN" ]; then
