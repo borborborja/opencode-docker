@@ -37,7 +37,8 @@ WORKDIR /app
 ENV PATH="/root/.opencode/bin:${PATH}"
 
 # Pre-install OpenCode during build to speed up container start
-RUN curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
+RUN curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path && \
+    mv /root/.opencode/bin/opencode /usr/local/bin/opencode
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -10,27 +10,27 @@ echo "Current User: $(whoami)"
 
 echo "Checking for OpenCode updates or initial installation..."
 # The official install script detects if it's already installed and its version.
-if ! curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
-    echo "Warning: Installer script exited with an error. Attempting to continue anyway..."
+# Note: we ignore the exit code as we already have a pre-installed binary in /usr/local/bin
+curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path || echo "Warning: Update check failed. Using existing binary."
+
+# If the installer put a new version in the default path, move it to our safe location
+if [ -f "/root/.opencode/bin/opencode" ]; then
+    echo "Found new/updated binary in default path. Moving to /usr/local/bin..."
+    mv /root/.opencode/bin/opencode /usr/local/bin/opencode
 fi
 
-# Robust verification: check multiple paths
-OPENCODE_BIN=$(which opencode || true)
+# Final check for the binary in our safe location
+OPENCODE_BIN="/usr/local/bin/opencode"
 
-if [ -z "$OPENCODE_BIN" ]; then
-    # Fallback search if 'which' fails
-    if [ -f "/root/.opencode/bin/opencode" ]; then
-        OPENCODE_BIN="/root/.opencode/bin/opencode"
-    elif [ -f "/usr/local/bin/opencode" ]; then
-        OPENCODE_BIN="/usr/local/bin/opencode"
+if [ ! -x "$OPENCODE_BIN" ]; then
+    echo "Error: OpenCode binary not found or not executable at $OPENCODE_BIN"
+    # Fallback search as a last resort
+    OPENCODE_BIN=$(which opencode || true)
+    if [ -z "$OPENCODE_BIN" ] || [ ! -x "$OPENCODE_BIN" ]; then
+        echo "Searching filesystem for 'opencode'..."
+        find /root /usr /bin -name opencode 2>/dev/null || echo "No 'opencode' file found."
+        exit 1
     fi
-fi
-
-if [ -z "$OPENCODE_BIN" ] || [ ! -x "$OPENCODE_BIN" ]; then
-    echo "Error: OpenCode binary not found or not executable after installation."
-    echo "Searching filesystem for 'opencode'..."
-    find /root /usr /bin -name opencode 2>/dev/null || echo "No 'opencode' file found."
-    exit 1
 fi
 
 echo "OpenCode binary found at: $OPENCODE_BIN"
