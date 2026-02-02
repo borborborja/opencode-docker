@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Path to opencode binary
-INSTALL_DIR="/usr/local/bin"
+# Path to opencode binary (installer defaults to ~/.opencode/bin)
+INSTALL_DIR="/root/.opencode/bin"
 export PATH="$INSTALL_DIR:$PATH"
 
 echo "Checking for OpenCode updates or initial installation..."

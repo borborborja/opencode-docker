@@ -30,11 +30,14 @@ RUN apt-get update && apt-get install -y \
 # Install yq (YAML processor)
 RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
 
-# Pre-install OpenCode during build to speed up container start
-RUN curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
-
 # Set working directory
 WORKDIR /app
+
+# Ensure OpenCode binary is in the PATH
+ENV PATH="/root/.opencode/bin:${PATH}"
+
+# Pre-install OpenCode during build to speed up container start
+RUN curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -4,8 +4,6 @@ services:
     container_name: opencode-ai
     ports:
       - "4096:4096"
-    env_file:
-      - .env
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
