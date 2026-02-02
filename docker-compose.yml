@@ -1,0 +1,27 @@
+services:
+  opencode:
+    build: .
+    container_name: opencode-ai
+    ports:
+      - "4096:4096"
+    env_file:
+      - .env
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+    volumes:
+      - opencode-data:/root/.opencode
+      - ./projects:/app
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4096" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  opencode-data:
