@@ -1,48 +1,32 @@
 #!/bin/bash
 set -e
 
-# Ensure PATH includes common locations
-export PATH="/root/.opencode/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
-
-echo "Running entrypoint script..."
-echo "Current PATH: $PATH"
+echo "--- OpenCode Docker Entrypoint v2 ---"
 echo "Current User: $(whoami)"
 
-echo "Checking for OpenCode updates..."
-# We run the installer but don't let it fail the script.
-# The installer might fail due to network issues or GitHub rate limits.
-if curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
-    # If the installer put a new version in the default path, move it to our safe location
-    if [ -f "/root/.opencode/bin/opencode" ]; then
-        echo "Found new/updated binary. Updating /usr/local/bin/opencode..."
-        mv /root/.opencode/bin/opencode /usr/local/bin/opencode
-        chmod +x /usr/local/bin/opencode
-    fi
-else
-    echo "Warning: Update check failed (network issue or rate limit). Continuing with existing version..."
+# Try to update if AUTO_UPDATE is set to true
+if [ "${AUTO_UPDATE}" = "true" ]; then
+    echo "Checking for updates via NPM..."
+    npm i -g opencode-ai@latest || echo "Warning: Update failed. Continuing with existing version."
 fi
 
-# Final check for the binary
-OPENCODE_BIN="/usr/local/bin/opencode"
+# Find the binary
+OPENCODE_BIN=$(which opencode || which opencode-ai || echo "")
 
-if [ ! -x "$OPENCODE_BIN" ]; then
-    echo "Error: OpenCode binary not found or not executable at $OPENCODE_BIN"
-    # Fallback search as a last resort
-    OPENCODE_BIN=$(which opencode || true)
-    if [ -z "$OPENCODE_BIN" ] || [ ! -x "$OPENCODE_BIN" ]; then
-        echo "Searching filesystem for 'opencode'..."
-        find /root /usr /bin -name opencode 2>/dev/null || echo "No 'opencode' file found."
-        exit 1
-    fi
+if [ -z "$OPENCODE_BIN" ]; then
+    echo "Error: opencode binary not found in PATH."
+    echo "PATH is: $PATH"
+    ls -la /usr/local/bin
+    exit 1
 fi
 
-echo "OpenCode binary found at: $OPENCODE_BIN"
-echo "OpenCode version: $($OPENCODE_BIN --version || echo 'unknown')"
+echo "Using OpenCode at: $OPENCODE_BIN"
+$OPENCODE_BIN --version || echo "Warning: Could not determine version."
 
-# Configure basic Git identity for the agent if not set
+# Git config
 git config --global user.email "agent@opencode.local" || true
 git config --global user.name "OpenCode Agent" || true
 
-# Start OpenCode web interface
+# Start Web Server
 echo "Starting OpenCode web interface on port 4096..."
 exec "$OPENCODE_BIN" web --port 4096 --host 0.0.0.0

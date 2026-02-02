@@ -27,22 +27,18 @@ RUN apt-get update && apt-get install -y \
     ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yq (YAML processor)
-RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
-
-# Set working directory
-WORKDIR /app
-
-# Ensure OpenCode binary is in the PATH
-ENV PATH="/root/.opencode/bin:${PATH}"
-
-# Pre-install OpenCode during build to speed up container start
-RUN curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path && \
-    mv /root/.opencode/bin/opencode /usr/local/bin/opencode
+# Install OpenCode via NPM (most stable method for Docker)
+RUN npm i -g opencode-ai@latest
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set working directory
+WORKDIR /app
+
+# Ensure standard binary path is reachable
+RUN ln -sf /usr/local/bin/opencode-ai /usr/local/bin/opencode || true
 
 # Expose the default port
 EXPOSE 4096
